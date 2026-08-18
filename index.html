@@ -241,12 +241,23 @@ canvas#equityChart { display: block; width: 100%; height: 160px; }
 .detail {
   grid-column: 1 / -1;
   display: none;
+  flex-direction: column;
   gap: 10px;
   padding: 10px 4px 4px 30px;
   font-family: var(--mono);
   font-size: 0.78rem;
 }
 .detail.open { display: flex; }
+.detail-group { display: flex; flex-direction: column; gap: 6px; }
+.detail-group-label {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 3px;
+}
+.detail-group-row { display: flex; gap: 10px; }
 .detail-stat { display: flex; flex-direction: column; gap: 2px; }
 .detail-stat .k {
   font-size: 0.62rem;
@@ -384,14 +395,29 @@ function renderHero() {
   document.getElementById("fleetTotal").textContent = fmtValue(DATA.fleet_total_pips);
 }
 
-function detailStatsHtml(b) {
+function detailStatsRow(b) {
   const profCls = b.profit_pips > 0 ? "pos" : "";
   const lossCls = b.loss_pips < 0 ? "neg" : "";
   return `
-    <div class="detail-stat"><div class="k">Trade total</div><div class="v">${b.n}</div></div>
-    <div class="detail-stat"><div class="k">Profit</div><div class="v ${profCls}">${b.n_profit} trade${b.n_profit === 1 ? "" : "s"}, ${fmtPips(b.profit_pips)}</div></div>
-    <div class="detail-stat"><div class="k">Loss</div><div class="v ${lossCls}">${b.n_loss} trade${b.n_loss === 1 ? "" : "s"}, ${fmtPips(b.loss_pips)}</div></div>
-    ${b.n_scratch > 0 ? `<div class="detail-stat"><div class="k">Scratch</div><div class="v">${b.n_scratch}</div></div>` : ""}
+    <div class="detail-group-row">
+      <div class="detail-stat"><div class="k">Trade total</div><div class="v">${b.n}</div></div>
+      <div class="detail-stat"><div class="k">Profit</div><div class="v ${profCls}">${b.n_profit} trade${b.n_profit === 1 ? "" : "s"}, ${fmtPips(b.profit_pips)}</div></div>
+      <div class="detail-stat"><div class="k">Loss</div><div class="v ${lossCls}">${b.n_loss} trade${b.n_loss === 1 ? "" : "s"}, ${fmtPips(b.loss_pips)}</div></div>
+      ${b.n_scratch > 0 ? `<div class="detail-stat"><div class="k">Scratch</div><div class="v">${b.n_scratch}</div></div>` : ""}
+    </div>
+  `;
+}
+
+function detailStatsHtml(daily, total) {
+  return `
+    <div class="detail-group">
+      <div class="detail-group-label">Today</div>
+      ${detailStatsRow(daily)}
+    </div>
+    <div class="detail-group">
+      <div class="detail-group-label">Total (all history)</div>
+      ${detailStatsRow(total)}
+    </div>
   `;
 }
 
@@ -432,7 +458,7 @@ function renderRows(containerId, eas) {
         <div class="row-daily ${cls}">total: ${e.n === 0 ? "&mdash;" : fmtValue(e.net_pips)}</div>
       </div>
       <div class="detail" id="detail-${detailKey}">
-        ${detailStatsHtml(e.breakdown)}
+        ${detailStatsHtml(e.daily_breakdown, e.breakdown)}
       </div>
     `;
     row.addEventListener("click", () => {
